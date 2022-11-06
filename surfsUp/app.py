@@ -1,6 +1,7 @@
 # 1. Import Flask
 import flask
 from flask import Flask, jsonify
+
 # Python SQL toolkit and Object Relational Mapper
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
@@ -9,6 +10,10 @@ from sqlalchemy import create_engine, func, inspect
 import numpy as np
 import pandas as pd
 import datetime as dt
+
+from matplotlib import style
+style.use('fivethirtyeight')
+import matplotlib.pyplot as plt
 
 # 2. Create an app
 app = Flask(__name__)
@@ -43,8 +48,10 @@ def welcome():
         f"/api/v1.0/precipitation<br/>"
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/YYYY-MM-DD to see temperature data from given date<br/>"
-        f"/api/v1.0/YYYY-MM-DD/YYYY-MM-DD to see temperature data between given dates"
+        f"/api/v1.0/&ltstart&gt<br/>"
+        f"/api/v1.0/&ltstart&gt/&ltend&gt<br/>"
+        #f"/api/v1.0/YYYY-MM-DD to see temperature data from given date<br/>"
+        #f"/api/v1.0/YYYY-MM-DD/YYYY-MM-DD to see temperature data between given dates"
     )
 
 # /api/v1.0/precipitation
@@ -55,6 +62,17 @@ def precipitation():
     session = Session(engine)
     precip = session.query(measurement.date, measurement.prcp)
     session.close()
+
+    # Design a query to retrieve the last 12 months of precipitation data and plot the results
+
+    # Calculate the date 1 year ago from the last data point in the database
+
+    last_data_point = session.query(measurement.date).order_by(measurement.date.desc()).first()
+    year_ago = dt.date(2021,10,31   ) - dt.timedelta(days= 365)
+
+    year_prcp = session.query(measurement.date, measurement.prcp).\
+    filter(measurement.date >= year_ago, measurement.prcp != None).\
+    order_by(measurement.date).all()    
 
     #using a dict in this way is problematic - there will be multiple instances of the same date. no clue as to what the instructions require for this problem.
     all_rain = {}
