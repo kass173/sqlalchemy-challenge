@@ -65,10 +65,12 @@ def precipitation():
 
     # Design a query to retrieve the last 12 months of precipitation data and plot the results
 
+    most_recent = session.query(func.max(measurement.date)).first()[0]
+
     # Calculate the date 1 year ago from the last data point in the database
 
     last_data_point = session.query(measurement.date).order_by(measurement.date.desc()).first()
-    year_ago = dt.date(2021,10,31   ) - dt.timedelta(days= 365)
+    year_ago = dt.date(2017,8,23) - dt.timedelta(days= 365)
 
     year_prcp = session.query(measurement.date, measurement.prcp).\
     filter(measurement.date >= year_ago, measurement.prcp != None).\
@@ -160,6 +162,17 @@ def betwixt(start, end = None):
 
     tempDF = pd.DataFrame(temp_query, columns=['date', 'tobs'])
     return f"The temperature between the dates {start} and {end} the can be summarised as follows: minimum {tempDF['tobs'].min()}, maximum {tempDF['tobs'].max()}, and average {tempDF['tobs'].mean()}."
+
+    calc_temp = calc_temps(start, end)
+    ta_temp= list(np.ravel(calc_temp))
+
+    tmin = ta_temp[0]
+    tmax = ta_temp[2]
+    temp_avg = ta_temp[1]
+    temp_dict = { 'Minimum temperature': tmin, 'Maximum temperature': tmax, 'Avg temperature': temp_avg}
+
+    return jsonify(temp_dict)
+
 # 4. Define main behavior
 if __name__ == "__main__":
     app.run(debug=True)
