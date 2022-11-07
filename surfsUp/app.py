@@ -137,9 +137,6 @@ def names():
 
     return jsonify(temp_return)    
 
-
-
-
 # define dynamic route
 # /api/v1.0/<start> and /api/v1.0/<start>/<end>
     # Return a JSON list of the minimum temperature, the average temperature, and the maximum temperature for a given start or start-end range.
@@ -157,18 +154,17 @@ def betwixt(start, end = None):
     if end is None:
         end = session.query(func.max(measurement.date)).first()[0]
     
-    # calculate TMIN, TAVG, and TMAX for all dates greater than or equal to the start date .
-    temp_query = session.query(measurement.date, measurement.tobs).filter(measurement.date >= start).filter(measurement.date <= end)
+        # calculate TMIN, TAVG, and TMAX for all dates greater than or equal to the start date .
+        temp_query = session.query(measurement.date, measurement.tobs).filter(measurement.date >= start).filter(measurement.date <= end)
 
-    tempDF = pd.DataFrame(temp_query, columns=['date', 'tobs'])
-    return f"The temperature between the dates {start} and {end} the can be summarised as follows: minimum {tempDF['tobs'].min()}, maximum {tempDF['tobs'].max()}, and average {tempDF['tobs'].mean()}."
+        tempDF = pd.DataFrame(temp_query, columns=['date', 'tobs'])
+        return f"The temperature between the dates {start} and {end} the can be summarised as follows: minimum, maximum and average."
 
-    calc_temp = calc_temps(start, end)
-    ta_temp= list(np.ravel(calc_temp))
 
-    tmin = ta_temp[0]
-    tmax = ta_temp[2]
-    temp_avg = ta_temp[1]
+
+    tmin = {tempDF['tobs'].min()},
+    tmax = {tempDF['tobs'].max()}, 
+    temp_avg = {tempDF['tobs'].mean()},
     temp_dict = { 'Minimum temperature': tmin, 'Maximum temperature': tmax, 'Avg temperature': temp_avg}
 
     return jsonify(temp_dict)
