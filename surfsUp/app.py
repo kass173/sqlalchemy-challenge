@@ -139,53 +139,40 @@ def tobs():
 
     return jsonify(temp_return)    
 
-@app.route('/api/v1.0/<start>')
-def start_date(start):
-    session = Session(engine)
+# define dynamic route
+# /api/v1.0/<start> and /api/v1.0/<start>/<end>
+    # Return a JSON list of the minimum temperature, the average temperature, and the maximum temperature for a given start or start-end range.
 
-    query_date = dt.datetime.strptime(2010-1-1, '%Y-%m-%d').date()
 
-    temp_return = [func.min(measurement.tobs),
-                  func.max(measurement.tobs),
-                  func.avg(measurement.tobs)]
+    # When given the start and the end date, calculate the TMIN, TAVG, 
+    # and TMAX for dates from the start date through the end date (inclusive).
+@app.route("/api/v1.0/<start>")
+@app.route("/api/v1.0/<start>/<end>")
+def betwixt(start, end = None):
+    # Create our session (link) from Python to the DB
+    session = Session(engine)   
 
-    date_temp = session.query(*temp_return).filter(func.strftime('%Y-%m-%d', Measurement.date) >= query_date).all()
-
-    session.close()
-
-    return (
-        f"Analysis of temperature from {start} to 2017-08-23:<br/>"
-        f"Minimum temperature: {date_temp[0][0]} °F<br/>"
-        f"Maximum temperature: {date_temp[0][1]} °F<br/>"
-        f"Average temperature: {date_temp[0][2]} °F"
-    )
-
-@app.route('/api/v1.0/<start>/<end>')
-def date_start_end(start, end):
-
-    session = Session(engine)
-
-    query_date_start = dt.datetime.strptime(2010-1-1, '%Y-%m-%d').date()
-    query_date_end = dt.datetime.strptime(2017-8-23, '%Y-%m-%d').date()
-
-    temp_return = [func.min(measurement.tobs),
-                func.max(measurement.tobs),
-                func.avg(measurement.tobs)]
+    # if they didn't supply an end date, instantiate it as the most recent date in the dataset.
+    if end is None:
+        end = session.query(func.max(measurement.date)).first()[0]
     
-    date_temp = session.query(*temp_list).\
-                filter(func.strftime('%Y-%m-%d', measurement.date) >= query_date_start).\
-                filter(func.strftime('%Y-%m-%d', measurement.date) <= query_date_end).all()
+        # calculate TMIN, TAVG, and TMAX for all dates greater than or equal to the start date .
+        temp_query = session.query(measurement.date, measurement.tobs).filter(measurement.date >= start).filter(measurement.date <= end)
 
-    session.close()
-
-
-    return (
-        f"Analysis of temperature from {start} to {end}:<br/>"
-        f"Minimum temperature: {date_temp[0][0]} °F<br/>"
-        f"Maximum temperature: {date_temp[0][1]} °F<br/>"
-        f"Average temperature: {date_temp[0][2]} °F"
-    )
+        tempDF = pd.DataFrame(temp_query, columns=['date', 'tobs'])
+        return f"The temperature between the dates {start} and {end} the can be summarised as follows: minimum, maximum and average."
 
 
-if __name__ == '__main__':
+
+        tmin = {tempDF['tobs'].min()},
+        tmax = {tempDF['tobs'].max()}, 
+        temp_avg = {tempDF['tobs'].mean()},
+        temp_dict = { 'Minimum temperature': tmin, 'Maximum temperature': tmax, 'Avg temperature': temp_avg}
+
+        return jsonify(temp_dict)
+
+# 4. Define main behavior
+if __name__ == "__main__":
     app.run(debug=True)
+
+
